@@ -1,0 +1,120 @@
+"A datetime string with format `Y-m-d H:i:s`, e.g. `2018-05-23 13:43:32`."
+scalar DateTime @scalar(class: "Nuwave\\Lighthouse\\Schema\\Types\\Scalars\\DateTime")
+
+
+type Mutation {
+    createUserAndSpecialization(input: CreateUserInput! @spread): User @create
+}
+
+input CreateUserInput {
+    name: String!
+    email: String!
+    password: String!
+    specializations: CreateSpecializationBelongsToMany
+}
+input CreateSpecializationBelongsToMany {
+    connect: [ID!]
+    create: [CreateSpecializationInput!]
+    sync: [ID!]
+}
+input CreateSpecializationInput {
+    name: String!
+    parent_id: Int
+}
+
+"Indicates what fields are available at the top level of a query operation."
+type Query {
+    "Find a single user by an identifying attribute."
+    user(
+      "Search by primary key."
+      id: ID @eq @rules(apply: ["prohibits:email", "required_without:email"])
+
+      "Search by email address."
+      email: String @eq @rules(apply: ["prohibits:id", "required_without:id", "email"])
+    ): User @find
+
+    "List multiple users."
+    users(
+      "Filters by name. Accepts SQL LIKE wildcards `%` and `_`."
+      name: String @where(operator: "like")
+    ): [User!]! @paginate(defaultCount: 10)
+
+    userStatuses(
+        "Search by primary key."
+        id: ID
+    ): [UserStatus!]! @paginate(defaultCount: 10)
+
+    specialization(
+        "Search by primary key."
+        id: ID @eq
+    ): Specialization @find
+
+    specializations(
+        parent_id: String @where(operator: "=")
+    ): [Specialization!]! @paginate(defaultCount: 10)
+}
+
+"Account of a person who utilizes this application."
+type User {
+     "Unique primary key."
+     id: ID!
+
+     "Non-unique name."
+     name: String!
+
+     "Unique email address."
+     email: String!
+
+     specializations: [User!]!
+
+     "When the email was verified."
+     email_verified_at: DateTime
+
+     "When the account was created."
+     created_at: DateTime!
+
+     "When the account was last updated."
+     updated_at: DateTime!
+ }
+
+ type UserStatus {
+    "Unique primary key."
+    id: ID!
+
+    "Non-unique name."
+    name: String!
+
+    "Non-unique code."
+    code: Int!
+
+    users: [User!]!
+
+    "When the account was created."
+    created_at: DateTime!
+
+    "When the account was last updated."
+    updated_at: DateTime!
+}
+
+type Specialization {
+    "Unique primary key."
+    id: ID!
+
+    "Unique name."
+    name: String!
+
+    "Non-unique parent_id."
+    parent_id: Int
+
+    users: [User!]!
+
+    categories: [Specialization!]!
+
+    childrenCategories: [Specialization!]!
+
+    "When the account was created."
+    created_at: DateTime!
+
+    "When the account was last updated."
+    updated_at: DateTime!
+}
